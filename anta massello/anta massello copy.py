@@ -1,3 +1,6 @@
+#Author-
+#Description-
+
 # Author-aa
 # Description-
 
@@ -8,24 +11,27 @@ import traceback
 import os
 import math
 from .utils import *           # libreria comune ai vari script
-from .profiloclass import *    # definizione dei profili
+# from .maniglie import *    # definizione dei profili
 # Globals
 _app = adsk.core.Application.cast(None)
 _ui = adsk.core.UserInterface.cast(None)
 _units = ''
 _pos = 0
-_lung = adsk.core.ValueCommandInput.cast(None)
-_tipo = adsk.core.DropDownCommandInput.cast(None)
+_alt = adsk.core.ValueCommandInput.cast(None)
+_larg = adsk.core.ValueCommandInput.cast(None)
+_sps = adsk.core.ValueCommandInput.cast(None)
+_massello = adsk.core.ValueCommandInput.cast(None)
+_pannello = adsk.core.ValueCommandInput.cast(None)
+_cava = adsk.core.ValueCommandInput.cast(None)
+_maniglia = adsk.core.DropDownCommandInput.cast(None)
 _doppio = adsk.core.DropDownCommandInput.cast(None)
-_a1 = adsk.core.ValueCommandInput.cast(None)
-_a2 = adsk.core.ValueCommandInput.cast(None)
-_b1 = adsk.core.ValueCommandInput.cast(None)
-_b2 = adsk.core.ValueCommandInput.cast(None)
+
+
 # _des = adsk.core.StringValueCommandInput.cast(None)
 # _peso = adsk.core.TextBoxCommandInput.cast(None)
 _errMessage = adsk.core.TextBoxCommandInput.cast(None)
 _handlers = []
-profili = {}
+maniglie = {}
 
 
 # ---------------------------- Loader -------------------------------------------------
@@ -36,18 +42,18 @@ def run(context):
         _app = adsk.core.Application.get()
         _ui = _app.userInterface
 
-        profili = loadprofili()
+#        maniglie = loadposman()
 
-        cmdDef = _ui.commandDefinitions.itemById('myProfile')
+        cmdDef = _ui.commandDefinitions.itemById('myAnta')
         if not cmdDef:
             cmdDef = _ui.commandDefinitions.addButtonDefinition(
-                'myProfile', 'Il profilo', 'Crea un profilo', 'res')
-
+                'myAnta', 'Anta Massello', 'Crea anta Massello', 'res')
         onCommandCreated = ProfileCommandCreatedHandler()
         cmdDef.commandCreated.add(onCommandCreated)
         _handlers.append(onCommandCreated)
 
         cmdDef.execute()
+
         adsk.autoTerminate(False)
     except:
         if _ui:
@@ -80,51 +86,53 @@ class ProfileCommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
             if not design:
                 _ui.messageBox('Un disegno deve essere attivo')
                 return()
-            global _units, _lung, _tipo, _a1, _a2, _b1, _b2, _doppio, _errMessage
+            global _units,_alt,_larg,_sps,_massello,_pannello,_doppio,_maniglia,_cava, _errMessage
             _units = design.unitsManager.defaultLengthUnits
             # impostazione dei valori e defaults
-            lung = getattr(design, 'lung', "10")
-            tipo = getattr(design, 'tipo', 's40x2')
-            # a1=getattr(design,'a1',"0")
-            # a2=getattr(design,'a2',"0")
-            # b1=getattr(design,'b1',"0")
-            # b2=getattr(design,'b2',"0")
-            a1 = a2 = b1 = b2 = "0"
+            alt = getattr(design, 'alt', "450")
+            larg = getattr(design, 'larg', "600")
+            sps = getattr(design, 'sps', "20")
+            massello = getattr(design, 'massello', "50")
+            pannello= getattr(design, 'pannello', "8")
+            cava=getattr(design,'cava',5)
+            
             cmd = eventArgs.command
             cmd.isExecutedWhenPreEmpted = False
             inputs = cmd.commandInputs
-            _lung = inputs.addValueInput(
-                'lung', 'lunghezza', "cm", adsk.core.ValueInput.createByReal(float(lung)))
+            _alt = inputs.addValueInput(
+                'alt', 'altezza', "mm", adsk.core.ValueInput.createByReal(float(alt)))
+            _larg = inputs.addValueInput(
+                'larg', 'larghezza', "mm", adsk.core.ValueInput.createByReal(float(larg)))
+            _sps = inputs.addValueInput(
+                'sps', 'spessore', "mm", adsk.core.ValueInput.createByReal(float(sps)))
+            _massello = inputs.addValueInput(
+                'massello', 'massello', "mm", adsk.core.ValueInput.createByReal(float(massello)))
+            _pannello = inputs.addValueInput(
+                'pannello', 'pannello', "mm", adsk.core.ValueInput.createByReal(float(pannello)))
+            _cava = inputs.addValueInput(
+                'cava', 'cava', "mm", adsk.core.ValueInput.createByReal(float(cava)))
+                
+                
+#    
 #            _t0 = inputs.addDropDownCommandInput('t0', 'Tipo Profilo', adsk.core.DropDownStyles.TextListDropDownStyle)
+'''
+            _maniglia = inputs.addDropDownCommandInput(
+                'maniglia', 'pos maniglia', adsk.core.DropDownStyles.TextListDropDownStyle)
+           
 
-            _tipo = inputs.addDropDownCommandInput(
-                'tipo', 'Misura', adsk.core.DropDownStyles.TextListDropDownStyle)
-
+            
             kk = []
             for x in profili.keys():
                 kk.append(x)
             kk.sort()
-            _tipo.listItems.clear()
+            _maniglia.listItems.clear()
             for x in kk:
-                _tipo.listItems.add(x, x == tipo)
-
+                _maniglia.listItems.add(x, x == maniglia)
+ '''           
             _doppio = inputs.addDropDownCommandInput(
-                'doppio', 'Taglio doppio inclinato', adsk.core.DropDownStyles.TextListDropDownStyle)
+                'doppio', 'Anta doppia', adsk.core.DropDownStyles.TextListDropDownStyle)
             _doppio.listItems.add("no", True)
-            _doppio.listItems.add("collineare", False)
-            _doppio.listItems.add("contrapposto", False)
-
-            _a1 = inputs.addValueInput(
-                'a1', 'Ang.Ini', "deg", adsk.core.ValueInput.createByReal(float(a1)))
-            _a2 = inputs.addValueInput(
-                'a2', 'Ang.Ini (2)', "deg", adsk.core.ValueInput.createByReal(float(a2)))
-            _b1 = inputs.addValueInput(
-                'b1', 'Ang.Fin', "deg", adsk.core.ValueInput.createByReal(float(b1)))
-            _b2 = inputs.addValueInput(
-                'b2', 'Ang.Fin (2)', "deg", adsk.core.ValueInput.createByReal(float(b2)))
-            _a2.isVisible = False
-            _b2.isVisible = False
-
+            _doppio.listItems.add("si", False)
             _errMessage = inputs.addTextBoxCommandInput(
                 'errMessage', '', '', 2, True)
             _errMessage.isFullWidth = True
@@ -156,13 +164,13 @@ class ProfileCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
         try:
             eventArgs = adsk.core.InputChangedEventArgs.cast(args)
             changedInput = eventArgs.input
-
+'''
             global _a2, _b2, _doppio
             if changedInput.id == 'doppio':
                 vis = _doppio.selectedItem.name != 'no'
                 _a2.isVisible = vis
                 _b2.isVisible = vis
-
+'''
         except:
             if _ui:
                 _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
@@ -174,27 +182,31 @@ class ProfileCommandExecuteHandler(adsk.core.CommandEventHandler):
 
     def notify(self, args):
         try:
-            global _lung, _tipo, _a1, _a2, _b1, _b2, _grname, profili, _app, _doppio
+            global _alt,_larg,_sps,_massello,_pannello,_doppio,_maniglia,_cava, _app,_errMessage
             eventArgs = adsk.core.CommandEventArgs.cast(args)
             design = adsk.fusion.Design.cast(_app.activeProduct)
             attrs = design.attributes
 
             # variabili input
-            lung = _lung.value
-            tprofilo = _tipo.selectedItem.name
-            modo = _doppio.selectedItem.name
-            a1 = _a1.value
-            a2 = _a2.value
-            b1 = _b1.value
-            b2 = _b2.value
-
-            setattr(design, "lung", str(lung))
-            setattr(design, "tipo", tprofilo)
-            setattr(design, "a1", str(a1))
-            setattr(design, "a2", str(a2))
-            setattr(design, "b1", str(b1))
-            setattr(design, "b2", str(b2))
-
+            alt = _alt.value
+            larg = _larg.value
+            sps = _sps.value
+            massello = _massello.value
+            pannello = _pannello.value
+            cava = _cava.value
+            
+            doppio = _doppio.selectedItem.name
+            maniglia = _tipo.selectedItem.name
+            
+        
+            setattr(design, "alt", str(alt))
+            setattr(design, "larg", str(larg))
+            setattr(design, "sps", str(sps))
+            setattr(design, "massello", str(massello))
+            setattr(design, "pannello", str(pannello))
+            setattr(design, "cava", str(cava))
+            
+            '''
             profilo = profili[tprofilo]
             if profilo:
                 comp = draw(design, lung, profilo, a1, a2, b1, b2, modo)
@@ -204,7 +216,7 @@ class ProfileCommandExecuteHandler(adsk.core.CommandEventHandler):
                     camera_ = _app.activeViewport.camera
                     camera_.isFitView = True
                     _app.activeViewport.camera = camera_
-
+            '''
         except:
             if _ui:
                 _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
@@ -214,6 +226,8 @@ def draw(design, lung, tipo, a1, a2, b1, b2, modo):
     unitsMgr = design.unitsManager
     occs = design.rootComponent.occurrences
 
+    return
+'''
     tp = tipo.tipo
     py = unitsMgr.evaluateExpression(str(tipo.l), "mm")
     px = unitsMgr.evaluateExpression(str(tipo.a), "mm")
@@ -508,7 +522,7 @@ def createtriag(lines, ax, ay, bx, by, cx, cy):
     return
 
 
-'''
+
 def cuttriag(extrudes,sk,dd,neg=true):
     prof = sk.profiles.item(0)
     dist = adsk.core.ValueInput.createByReal(dd)

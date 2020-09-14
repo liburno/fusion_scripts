@@ -1,0 +1,15 @@
+oriz alta sx       ,120,50,50,L,A,O
+centrale alta      ,120,50,50,C,A,O 
+oriz alta dx       ,120,50,50,R,A,O
+vert alta sx       ,120,50,50,L,A,V 
+oriz alta dx       ,120,50,50,R,A,V
+
+
+oriz bassa sx      ,120,50,50,L,B,O
+centrale bassa     ,120,50,50,C,B,O
+oriz bassa dx      ,120,50,50,R,B,O
+vert bassa sx      ,120,50,50,L,B,V
+oriz bassa dx      ,120,50,50,R,B,V
+            
+centrale sx        ,120,50,50,L,C,V
+centrale destra    ,120,50,50,R,C,V

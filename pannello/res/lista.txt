@@ -1,0 +1,24 @@
+mdf , 8 ,
+mdf , 12 ,
+mdf , 20 ,
+mdf , 25 ,
+mdf , 30 ,
+mdf , 40 ,
+
+lam , 8 ,
+lam , 10 ,
+lam , 12 ,
+lam , 14
+lam , 20 ,
+lam , 25 ,
+
+legno, 10
+legno, 15 ,
+legno, 20 ,
+legno, 25 ,
+legno, 30 ,
+legno, 40 ,
+legno, 50 ,
+legno, 60 ,
+legno, 80 ,
+

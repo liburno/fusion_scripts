@@ -7,19 +7,12 @@ import traceback
 import os
 import math
 from .utils import *           # libreria comune ai vari script
-from .maniglie import *
+
 _app = adsk.core.Application.cast(None)
 _ui = adsk.core.UserInterface.cast(None)
 _units = ''
 _pos = 0
 _alt = adsk.core.ValueCommandInput.cast(None)
-_larg = adsk.core.ValueCommandInput.cast(None)
-_sps = adsk.core.ValueCommandInput.cast(None)
-_massello = adsk.core.ValueCommandInput.cast(None)
-_pannello = adsk.core.ValueCommandInput.cast(None)
-_cava = adsk.core.ValueCommandInput.cast(None)
-_maniglia = adsk.core.DropDownCommandInput.cast(None)
-_doppio = adsk.core.DropDownCommandInput.cast(None)
 
 
 _errMessage = adsk.core.TextBoxCommandInput.cast(None)
@@ -33,7 +26,7 @@ def run(context):
         global _app, _ui
         _app = adsk.core.Application.get()
         _ui = _app.userInterface
-        maniglie=loadposman()
+
         # _ui.messageBox('Hello script 3a')
 
         cmdDef = _ui.commandDefinitions.itemById('myAnta')
@@ -51,6 +44,7 @@ def run(context):
         if _ui:
             _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
+
 class Destroy(adsk.core.CommandEventHandler):
     def __init__(self):
         super().__init__()
@@ -63,6 +57,7 @@ class Destroy(adsk.core.CommandEventHandler):
         except:
             if _ui:
                 _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
 
 class Create(adsk.core.CommandCreatedEventHandler):
     def __init__(self):
@@ -81,39 +76,13 @@ class Create(adsk.core.CommandCreatedEventHandler):
             cmd = eventArgs.command
             cmd.isExecutedWhenPreEmpted = False
            
-            global _units,_alt,_larg,_sps,_massello,_pannello,_cava,_doppio, _errMessage
+            global _units,_alt, _errMessage
             _units = design.unitsManager.defaultLengthUnits
-            alt = getattr(design, 'alt', "45")
-            larg = getattr(design, 'larg', "60")
-            sps = getattr(design, 'sps', "2")
-            massello = getattr(design, 'massello', "5")
-            pannello= getattr(design, 'pannello', "0.8")
-            cava=getattr(design,'cava',"0.5")  
+            alt = getattr(design, 'alt', "450")
+            
             inputs = cmd.commandInputs
-         
             _alt = inputs.addValueInput(
                 'alt', 'altezza', "mm", adsk.core.ValueInput.createByReal(float(alt)))
-            _larg = inputs.addValueInput(
-                'larg', 'larghezza', "mm", adsk.core.ValueInput.createByReal(float(larg)))
-            _sps = inputs.addValueInput(
-                'sps', 'spessore', "mm", adsk.core.ValueInput.createByReal(float(sps)))
-            _massello = inputs.addValueInput(
-                'massello', 'massello', "mm", adsk.core.ValueInput.createByReal(float(massello)))
-            _pannello = inputs.addValueInput(
-                'pannello', 'pannello', "mm", adsk.core.ValueInput.createByReal(float(pannello)))
-            _cava = inputs.addValueInput(
-                'cava', 'cava', "mm", adsk.core.ValueInput.createByReal(float(cava)))
-
-            _doppio = inputs.addDropDownCommandInput(
-                'doppio', 'Anta doppia', adsk.core.DropDownStyles.TextListDropDownStyle)
-            _doppio.listItems.add("no", True)
-            _doppio.listItems.add("si", False)   
-
-            _maniglia = inputs.addDropDownCommandInput('maniglia', 'pos maniglia', adsk.core.DropDownStyles.TextListDropDownStyle)
-            _maniglia.listItems.clear()
-            for x in maniglie.keys():
-                _maniglia.listItems.add(x, x == maniglia)    
-            
             _errMessage = inputs.addTextBoxCommandInput(
                 'errMessage', '', '', 2, True)
             _errMessage.isFullWidth = True
@@ -169,6 +138,7 @@ class Execute(adsk.core.CommandEventHandler):
             # variabili input
             alt = _alt.value
             _ui.messageBox(str(alt))
+            '''
             larg = _larg.value
             sps = _sps.value
             massello = _massello.value
@@ -176,8 +146,7 @@ class Execute(adsk.core.CommandEventHandler):
             cava = _cava.value
             
             doppio = _doppio.selectedItem.name
-            
-            # maniglia = _tipo.selectedItem.name
+            maniglia = _tipo.selectedItem.name
             
         
             setattr(design, "alt", str(alt))
@@ -186,7 +155,6 @@ class Execute(adsk.core.CommandEventHandler):
             setattr(design, "massello", str(massello))
             setattr(design, "pannello", str(pannello))
             setattr(design, "cava", str(cava))
-            '''
             
             profilo = profili[tprofilo]
             if profilo:
@@ -203,7 +171,7 @@ class Execute(adsk.core.CommandEventHandler):
                 _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
-def draw(design, alt,larg,sps,massello,pannello,cava,doppio,maniglia):
+def draw(design, alt):
     unitsMgr = design.unitsManager
     occs = design.rootComponent.occurrences
 

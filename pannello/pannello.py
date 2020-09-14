@@ -15,6 +15,7 @@ _ui = adsk.core.UserInterface.cast(None)
 _units = ''
 _pos = 0
 _lung = adsk.core.ValueCommandInput.cast(None)
+_larg = adsk.core.ValueCommandInput.cast(None)
 _tipo = adsk.core.DropDownCommandInput.cast(None)
 _doppio = adsk.core.DropDownCommandInput.cast(None)
 _a1 = adsk.core.ValueCommandInput.cast(None)
@@ -80,10 +81,11 @@ class ProfileCommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
             if not design:
                 _ui.messageBox('Un disegno deve essere attivo')
                 return()
-            global _units, _lung, _tipo, _a1, _a2, _b1, _b2, _doppio, _errMessage
+            global _units, _lung,_larg, _tipo, _a1, _a2, _b1, _b2, _doppio, _errMessage
             _units = design.unitsManager.defaultLengthUnits
             # impostazione dei valori e defaults
-            lung = getattr(design, 'lung', "10")
+            lung = getattr(design, 'lung', "100")
+            larg = getattr(design, 'larg', "100")
             tipo = getattr(design, 'tipo', 's40x2')
             # a1=getattr(design,'a1',"0")
             # a2=getattr(design,'a2',"0")
@@ -94,7 +96,9 @@ class ProfileCommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
             cmd.isExecutedWhenPreEmpted = False
             inputs = cmd.commandInputs
             _lung = inputs.addValueInput(
-                'lung', 'lunghezza', "cm", adsk.core.ValueInput.createByReal(float(lung)))
+                'lung', 'lunghezza', "mm", adsk.core.ValueInput.createByReal(float(lung)))
+            _larg = inputs.addValueInput(
+                'larg', 'larghezza', "mm", adsk.core.ValueInput.createByReal(float(larg)))
 #            _t0 = inputs.addDropDownCommandInput('t0', 'Tipo Profilo', adsk.core.DropDownStyles.TextListDropDownStyle)
 
             _tipo = inputs.addDropDownCommandInput(
@@ -174,13 +178,14 @@ class ProfileCommandExecuteHandler(adsk.core.CommandEventHandler):
 
     def notify(self, args):
         try:
-            global _lung, _tipo, _a1, _a2, _b1, _b2, _grname, profili, _app, _doppio
+            global _lung, _larg,_tipo, _a1, _a2, _b1, _b2, _grname, profili, _app, _doppio
             eventArgs = adsk.core.CommandEventArgs.cast(args)
             design = adsk.fusion.Design.cast(_app.activeProduct)
             attrs = design.attributes
 
             # variabili input
             lung = _lung.value
+            larg = _larg.value
             tprofilo = _tipo.selectedItem.name
             modo = _doppio.selectedItem.name
             a1 = _a1.value
@@ -189,6 +194,7 @@ class ProfileCommandExecuteHandler(adsk.core.CommandEventHandler):
             b2 = _b2.value
 
             setattr(design, "lung", str(lung))
+            setattr(design, "larg", str(larg))
             setattr(design, "tipo", tprofilo)
             setattr(design, "a1", str(a1))
             setattr(design, "a2", str(a2))
@@ -197,7 +203,7 @@ class ProfileCommandExecuteHandler(adsk.core.CommandEventHandler):
 
             profilo = profili[tprofilo]
             if profilo:
-                comp = draw(design, lung, profilo, a1, a2, b1, b2, modo)
+                comp = draw(design, lung,larg, profilo, a1, a2, b1, b2, modo)
 
                 # zoom and fit
                 if comp:
@@ -210,14 +216,16 @@ class ProfileCommandExecuteHandler(adsk.core.CommandEventHandler):
                 _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
-def draw(design, lung, tipo, a1, a2, b1, b2, modo):
+def draw(design, lung,larg, tipo, a1, a2, b1, b2, modo):
     unitsMgr = design.unitsManager
     occs = design.rootComponent.occurrences
 
     tp = tipo.tipo
     py = unitsMgr.evaluateExpression(str(tipo.l), "mm")
-    px = unitsMgr.evaluateExpression(str(tipo.a), "mm")
-    sp = unitsMgr.evaluateExpression(str(tipo.sp), "mm")
+    px = larg # unitsMgr.evaluateExpression(str(tipo.a), "mm")
+    # sp = unitsMgr.evaluateExpression(str(tipo.sp), "mm")
+    
+    sp=0
     spacing = unitsMgr.evaluateExpression("20", "mm")
     subh=unitsMgr.evaluateExpression("-200", "mm")
     pos = float(getattr(design, 'pos', "0"))
@@ -233,9 +241,9 @@ def draw(design, lung, tipo, a1, a2, b1, b2, modo):
 
     sketches = newComp.sketches
     sk = sketches.add(newComp.yZConstructionPlane)
-    sk.name = "profilo"
+    sk.name = "pannello"
 
-    name = "p"+str(lung)+" "+tipo.name()
+    name = tipo.name()+str(lung)+"x"+str(larg)
     if a1:
         name = name+" a1="+todegstr(a1)
         if a2:
@@ -248,56 +256,14 @@ def draw(design, lung, tipo, a1, a2, b1, b2, modo):
 
     # profilo a l
     lines = sk.sketchCurves.sketchLines
-    if tp == 'l':
-        l1 = lines.addByTwoPoints(adsk.core.Point3D.create(
-            0, 0, 0), adsk.core.Point3D.create(px, 0, 0))
-        l2 = lines.addByTwoPoints(
-            l1.endSketchPoint, adsk.core.Point3D.create(px, sp, 0))
-        l3 = lines.addByTwoPoints(
-            l2.endSketchPoint, adsk.core.Point3D.create(sp, sp, 0))
-        l4 = lines.addByTwoPoints(
-            l3.endSketchPoint, adsk.core.Point3D.create(sp, py, 0))
-        l5 = lines.addByTwoPoints(
-            l4.endSketchPoint, adsk.core.Point3D.create(0, py, 0))
-        l6 = lines.addByTwoPoints(
-            l5.endSketchPoint, adsk.core.Point3D.create(0, 0, 0))
-        # arc = sk.sketchCurves.sketchArcs.addFillet(
-        #    l1, l1.startSketchPoint.geometry, l6, l6.endSketchPoint.geometry, sp*0.6)
-    elif tp == 's' or tp == "q" or tp == "r":
-        l1 = lines.addByTwoPoints(adsk.core.Point3D.create(
-            0, 0, 0), adsk.core.Point3D.create(px, 0, 0))
-        l2 = lines.addByTwoPoints(
-            l1.endSketchPoint, adsk.core.Point3D.create(px, py, 0))
-        l3 = lines.addByTwoPoints(
-            l2.endSketchPoint, adsk.core.Point3D.create(0, py, 0))
-        l4 = lines.addByTwoPoints(
-            l3.endSketchPoint, adsk.core.Point3D.create(0, 0, 0))
-        if sp:
-            '''
-            arc = sk.sketchCurves.sketchArcs.addFillet(
-                l1, l1.startSketchPoint.geometry, l2, l2.endSketchPoint.geometry, sp*0.6)
-            arc = sk.sketchCurves.sketchArcs.addFillet(
-                l2, l2.startSketchPoint.geometry, l3, l3.endSketchPoint.geometry, sp*0.6)
-            arc = sk.sketchCurves.sketchArcs.addFillet(
-                l3, l3.startSketchPoint.geometry, l4, l4.endSketchPoint.geometry, sp*0.6)
-            arc = sk.sketchCurves.sketchArcs.addFillet(
-                l4, l4.startSketchPoint.geometry, l1, l1.endSketchPoint.geometry, sp*0.6)
-            '''
-            l1 = lines.addByTwoPoints(adsk.core.Point3D.create(
-                sp, sp, 0), adsk.core.Point3D.create(px-sp, sp, 0))
-            l2 = lines.addByTwoPoints(
-                l1.endSketchPoint, adsk.core.Point3D.create(px-sp, py-sp, 0))
-            l3 = lines.addByTwoPoints(
-                l2.endSketchPoint, adsk.core.Point3D.create(sp, py-sp, 0))
-            l4 = lines.addByTwoPoints(
-                l3.endSketchPoint, adsk.core.Point3D.create(sp, sp, 0))
-    elif tp == 'c':
-        circles = sk.sketchCurves.sketchCircles
-        circle1 = circles.addByCenterRadius(
-            adsk.core.Point3D.create(px/2, px/2, 0), px/2)
-        if sp:
-            circle2 = circles.addByCenterRadius(
-                adsk.core.Point3D.create(px/2, px/2, 0), px/2-sp)
+    l1 = lines.addByTwoPoints(adsk.core.Point3D.create(
+        0, 0, 0), adsk.core.Point3D.create(px, 0, 0))
+    l2 = lines.addByTwoPoints(
+        l1.endSketchPoint, adsk.core.Point3D.create(px, py, 0))
+    l3 = lines.addByTwoPoints(
+        l2.endSketchPoint, adsk.core.Point3D.create(0, py, 0))
+    l4 = lines.addByTwoPoints(
+        l3.endSketchPoint, adsk.core.Point3D.create(0, 0, 0))
 
     prof = sk.profiles.item(0)
     extrudes = newComp.features.extrudeFeatures
@@ -320,7 +286,7 @@ def draw(design, lung, tipo, a1, a2, b1, b2, modo):
                 createtriag(lines, 0, 0, p2, py, 0, py)
 
             prof = sk.profiles.item(0)
-            dist = adsk.core.ValueInput.createByReal(py)
+            dist = adsk.core.ValueInput.createByReal(px)
 
             extrude = extrudes.createInput(
                 prof, adsk.fusion.FeatureOperations.CutFeatureOperation)
